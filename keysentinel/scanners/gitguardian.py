@@ -1,6 +1,8 @@
-"""GitGuardian scanner — checks SHA-256 hash of key against breach database.
+"""GitGuardian scanner — scans key against GitGuardian's secret detection engine.
 
-The plaintext key is NEVER sent to GitGuardian. Only its SHA-256 is transmitted.
+The key is sent to GitGuardian's /v1/scan endpoint as document content.
+GitGuardian detects the secret type, checks its validity, and reports whether
+this exact secret has previously appeared in public repository scans (known_secret).
 """
 
 from __future__ import annotations
@@ -17,9 +19,14 @@ _BASE_URL = "https://api.gitguardian.com/v1"
 
 
 def scan(key: SecureBytes) -> dict[str, Any]:
-    """Check key hash against GitGuardian's incident database.
+    """Scan key via GitGuardian's secret detection API.
 
-    Requires GITGUARDIAN_TOKEN env var (free account available at gitguardian.com).
+    Sends the key as document content to /v1/scan. GitGuardian checks:
+    - whether it matches a known secret type (policy_breaks)
+    - whether it's still valid/revoked (validity)
+    - whether it has been seen in previously monitored public repos (known_secret)
+
+    Requires GITGUARDIAN_TOKEN env var (free account at gitguardian.com).
     """
     token = os.getenv("GITGUARDIAN_TOKEN")
     if not token:
@@ -29,7 +36,10 @@ def scan(key: SecureBytes) -> dict[str, Any]:
             "summary": "Skipped — set GITGUARDIAN_TOKEN to enable GitGuardian scan.",
         }
 
-    key_hash = key.sha256()
+    raw = key.to_str()
+    # Wrap in a realistic .env line so GitGuardian's pattern engine recognises it
+    document = f"SECRET_KEY={raw}"
+    del raw
 
     headers = {
         "Authorization": f"Token {token}",
@@ -39,25 +49,47 @@ def scan(key: SecureBytes) -> dict[str, Any]:
     try:
         with httpx.Client(verify=True, timeout=15) as client:
             resp = client.post(
-                f"{_BASE_URL}/multiscan",
+                f"{_BASE_URL}/scan",
                 headers=headers,
-                json=[{"document": key_hash, "filename": "secret.txt"}],
+                json={"document": document, "filename": ".env"},
             )
 
         if resp.status_code == 401:
             return {"found": False, "hits": [], "summary": "GitGuardian: invalid token."}
         resp.raise_for_status()
 
-        results = resp.json()
-        leaked = [r for r in results if r.get("policy_break_count", 0) > 0]
+        result = resp.json()
+        breaks = result.get("policy_breaks", [])
 
-        if not leaked:
-            return {"found": False, "hits": [], "summary": "Not found in GitGuardian database."}
+        if not breaks:
+            return {
+                "found": False,
+                "hits": [],
+                "summary": "Not recognised as a known secret type by GitGuardian.",
+            }
+
+        # known_secret = True means GitGuardian has seen this exact secret in public repos
+        known = [b for b in breaks if b.get("known_secret")]
+        validity = breaks[0].get("validity", "unknown")
+        secret_type = breaks[0].get("type", "unknown")
+
+        if known:
+            return {
+                "found": True,
+                "hits": known,
+                "summary": (
+                    f"GitGuardian: secret type '{secret_type}' seen in public leaks. "
+                    f"Validity: {validity}. {len(known)} known incident(s)."
+                ),
+            }
 
         return {
-            "found": True,
-            "hits": leaked,
-            "summary": f"GitGuardian: {len(leaked)} policy break(s) detected.",
+            "found": False,
+            "hits": breaks,
+            "summary": (
+                f"GitGuardian: secret type '{secret_type}' detected, validity: {validity}. "
+                f"Not found in previously monitored public repos."
+            ),
         }
 
     except httpx.RequestError as exc:

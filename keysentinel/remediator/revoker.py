@@ -30,19 +30,43 @@ def revoke(key: SecureBytes, provider: Provider) -> dict[str, Any]:
 
 
 def _revoke_stripe(key: SecureBytes) -> dict[str, Any]:
+    """Attempt Stripe key revocation via CLI; fall back to manual steps.
+
+    Stripe does not expose a public REST endpoint for API key revocation.
+    The official methods are: Stripe Dashboard or Stripe CLI.
+    """
+    import shutil
+    import subprocess
+
     raw = key.to_str()
     try:
-        with httpx.Client(verify=True, timeout=15) as client:
-            resp = client.post(
-                "https://api.stripe.com/v1/restricted_keys",
-                auth=(raw, ""),
-                data={"status": "revoked"},
+        stripe_bin = shutil.which("stripe")
+        if stripe_bin:
+            result = subprocess.run(
+                [stripe_bin, "keys", "revoke", raw],
+                capture_output=True,
+                text=True,
+                timeout=30,
             )
-        if resp.status_code in (200, 204):
-            return {"revoked": True, "message": "Stripe key revoked successfully."}
-        return {"revoked": False, "message": f"Stripe revocation failed: {resp.status_code}"}
-    except httpx.RequestError as exc:
-        return {"revoked": False, "message": f"Network error: {type(exc).__name__}"}
+            if result.returncode == 0:
+                return {"revoked": True, "message": "Stripe key revoked via Stripe CLI."}
+            # CLI present but command failed — surface the error
+            stderr = result.stderr.strip()
+            return {
+                "revoked": False,
+                "message": f"Stripe CLI returned an error: {stderr or 'unknown'}",
+                "manual_steps": _manual_steps(Provider.STRIPE_LIVE),
+            }
+
+        # Stripe CLI not installed — guide user
+        return {
+            "revoked": False,
+            "message": (
+                "Stripe does not support key revocation via REST API. "
+                "Install the Stripe CLI or use the Dashboard."
+            ),
+            "manual_steps": _manual_steps(Provider.STRIPE_LIVE),
+        }
     finally:
         del raw
 
@@ -59,6 +83,19 @@ def _manual_steps(provider: Provider) -> list[str]:
             "1. Go to console.anthropic.com/settings/keys",
             "2. Revoke the compromised key",
             "3. Create a new key and update your .env files",
+        ],
+        Provider.STRIPE_LIVE: [
+            "1. Go to dashboard.stripe.com/apikeys",
+            "2. Find the key and click 'Revoke'",
+            "3. Or install Stripe CLI and run: stripe keys revoke <key>",
+            "4. Create a new key and update all services",
+            "5. Check dashboard.stripe.com/logs for suspicious transactions",
+        ],
+        Provider.STRIPE_TEST: [
+            "1. Go to dashboard.stripe.com/apikeys (test mode)",
+            "2. Find the key and click 'Revoke'",
+            "3. Or install Stripe CLI and run: stripe keys revoke <key>",
+            "4. Create a new test key and update your .env files",
         ],
         Provider.AWS: [
             "1. Go to IAM console → Users → Security credentials",

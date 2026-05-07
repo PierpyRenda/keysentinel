@@ -22,16 +22,17 @@ Your key (stays on your machine)
          ├─ 1. GitHub Code Search ──────► searches the exact key string
          │                                in ALL public GitHub repositories
          │
-         ├─ 2. GitGuardian database ────► sends only SHA-256(key) — never
-         │                                the key itself — and checks against
-         │                                millions of historical leak records
+         ├─ 2. GitGuardian database ────► sends the key as document content
+         │                                to GitGuardian's /v1/scan API, which
+         │                                detects the secret type, checks validity,
+         │                                and flags if seen in monitored public repos
          │
          └─ 3. Provider audit ──────────► calls the provider's own API with
                                           your key to check: is it still active?
                                           what accounts/resources does it access?
 ```
 
-**The key never leaves your machine in plaintext** except when it is used directly against the provider's own API (step 3) — the same call you would make yourself to verify it works.
+**The key is sent in plaintext only to APIs you explicitly authorise:** the provider's own audit API (step 3) and GitGuardian's scan API (step 2, requires GITGUARDIAN_TOKEN). GitHub Code Search (step 1) also receives the key string as a search query. No data is sent to any server controlled by us.
 
 ---
 
@@ -45,8 +46,8 @@ Your key (stays on your machine)
 | Groq | `gsk_...` | ✓ | ✓ Models available | Manual |
 | HuggingFace | `hf_...` | ✓ | ✓ Username + orgs | Manual |
 | Replicate | `r8_...` | ✓ | ✓ Account info | Manual |
-| Stripe Live | `rk_live_...` | ✓ | ✓ Events + IPs | ✓ Auto |
-| Stripe Test | `rk_test_...` | ✓ | ✓ Events + IPs | ✓ Auto |
+| Stripe Live | `rk_live_...` | ✓ | ✓ Events + IPs | ✓ CLI / Manual |
+| Stripe Test | `rk_test_...` | ✓ | ✓ Events + IPs | ✓ CLI / Manual |
 | SendGrid | `SG....` | ✓ | ✓ Account + scopes | Manual |
 | Resend | `re_...` | ✓ | ✓ Domains list | Manual |
 | Slack | `xoxb-...` / `xoxp-...` | ✓ | ✓ Workspace + user | Manual |
@@ -152,7 +153,7 @@ KeySentinel was built to handle credentials without exposing them.
 | **No disk writes** | Keys are never written to disk; JSON reports use masked form only |
 | **No log exposure** | Global exception hook redacts key patterns before any error is printed |
 | **TLS enforced** | `httpx` with `verify=True` — cannot be overridden |
-| **GitGuardian privacy** | Only SHA-256 hash is sent — the raw key never leaves your machine |
+| **GitGuardian scan** | Key sent as document content to GitGuardian's official scan API; checks type, validity, and known_secret flag |
 | **Rate limiting** | Checks GitHub quota before each request; exponential backoff on 429/403 |
 | **Input validation** | Regex + length (8–512 chars) + printable ASCII check before any operation |
 | **Open source** | Every line of code is auditable — no black box, no SaaS intermediary |
@@ -185,13 +186,13 @@ Based on real security research (GitGuardian 2024 report, TruffleHog data):
 - 14 providers auto-detected by key format
 - Any other key still gets GitHub + GitGuardian scan
 - Secure memory: keys zeroed from RAM after use
-- Auto-revocation for Stripe
+- Stripe revocation via Stripe CLI (if installed) or guided manual steps
 
 **Cons**
 - OpenAI and Anthropic do not expose per-key usage logs via public API (only dashboard)
 - AWS CloudTrail audit requires both Access Key ID and Secret Key
 - GitGuardian requires a free account for breach database access
-- Auto-revocation only for Stripe in v0.3
+- Stripe revocation requires Stripe CLI or Dashboard (no public REST endpoint for key revocation)
 
 ---
 
