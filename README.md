@@ -5,6 +5,7 @@
 KeySentinel is an open-source CLI that runs entirely on your machine. You give it your API keys, it tells you if they have been leaked, whether they are still active, and what to do next. Nothing is sent to any server controlled by us — only to the official APIs of the providers you use.
 
 ```bash
+# Requires Python 3.10+
 pip install keysentinel
 keysentinel scan --env .env
 ```
@@ -56,6 +57,16 @@ Your key (stays on your machine)
 **Any other key** (Twilio, Vercel, Cloudflare, ElevenLabs, Mailchimp, Discord, Airtable…): GitHub search + GitGuardian still run automatically. Only the provider-specific audit is skipped for unsupported formats.
 
 ---
+
+## Requirements
+
+- **Python 3.10+** — [download here](https://www.python.org/downloads/) if you don't have it
+- macOS, Linux, or Windows
+
+Check your version:
+```bash
+python3 --version
+```
 
 ## Installation
 
