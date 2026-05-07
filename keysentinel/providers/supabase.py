@@ -60,4 +60,8 @@ def audit(key: SecureBytes) -> dict[str, Any]:
         }
 
     except httpx.RequestError as exc:
-        return {"valid": False, "summary": f"Network error: {type(exc).__name__}", "events": []}
+        return {
+            "valid": False,
+            "summary": f"Could not reach Supabase project ({project_url}). Project may not exist or network error: {type(exc).__name__}",
+            "events": [],
+        }

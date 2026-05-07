@@ -18,7 +18,7 @@ def audit(key: SecureBytes) -> dict[str, Any]:
         with httpx.Client(verify=True, timeout=15) as client:
             resp = client.get("https://api.resend.com/domains", headers=headers)
 
-        if resp.status_code == 401:
+        if resp.status_code in (400, 401, 403):
             return {"valid": False, "summary": "Key invalid or revoked.", "events": []}
 
         resp.raise_for_status()
