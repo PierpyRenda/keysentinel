@@ -27,8 +27,8 @@ class KeyInfo:
 
 
 _PATTERNS: list[tuple[Provider, re.Pattern, str]] = [
-    (Provider.OPENAI,      re.compile(r"^sk-[A-Za-z0-9\-_]{20,}$"),         "OpenAI API key"),
     (Provider.ANTHROPIC,   re.compile(r"^sk-ant-[A-Za-z0-9\-_]{20,}$"),     "Anthropic API key"),
+    (Provider.OPENAI,      re.compile(r"^sk-[A-Za-z0-9\-_]{20,}$"),         "OpenAI API key"),
     (Provider.AWS,         re.compile(r"^AKIA[A-Z0-9]{16}$"),                "AWS Access Key ID"),
     (Provider.STRIPE_LIVE, re.compile(r"^rk_live_[A-Za-z0-9]{20,}$"),       "Stripe Live Secret"),
     (Provider.STRIPE_TEST, re.compile(r"^rk_test_[A-Za-z0-9]{20,}$"),       "Stripe Test Secret"),

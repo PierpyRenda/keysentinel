@@ -68,14 +68,15 @@ class SecureBytes:
     def wipe(self) -> None:
         """Zero every byte and release the buffer."""
         if self._buf:
-            for i in range(len(self._buf)):
+            n = len(self._buf)
+            for i in range(n):
                 self._buf[i] = 0
-            # Ask ctypes to overwrite even the memory that Python might cache
+            # Zero the underlying C buffer via ctypes using the correct data pointer
             try:
-                addr = id(self._buf)
-                ctypes.memset(addr, 0, len(self._buf))
-            except Exception:
-                pass
+                raw_ptr = (ctypes.c_char * n).from_buffer(self._buf)
+                ctypes.memset(raw_ptr, 0, n)
+            except (TypeError, ValueError):
+                pass  # from_buffer may fail if buf was already released — zeroing above is sufficient  # nosec B110
             self._buf = bytearray()
 
     def to_str(self) -> str:

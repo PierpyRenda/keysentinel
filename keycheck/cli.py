@@ -41,7 +41,11 @@ sys.excepthook = _safe_excepthook
 
 @app.command()
 def scan(
-    key: Annotated[Optional[str], typer.Option("--key", "-k", help="API key to check (use env var substitution in scripts)")] = None,
+    key: Annotated[Optional[str], typer.Option(
+        "--key", "-k",
+        help="API key (prefer env var substitution: --key $VAR). "
+             "WARNING: bare values appear in 'ps aux' — use interactive prompt or --env for production."
+    )] = None,
     env_file: Annotated[Optional[Path], typer.Option("--env", "-e", help=".env file to scan all keys")] = None,
     provider: Annotated[Optional[str], typer.Option("--provider", "-p", help="Force provider (openai, anthropic, aws, stripe, github)")] = None,
     output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Save JSON report to file")] = None,
@@ -51,26 +55,27 @@ def scan(
     """Scan one or more API keys for leaks and audit provider usage."""
     reporter.print_banner()
 
-    # Collect raw keys to scan
-    keys_to_scan: list[str] = []
-
     if key:
-        keys_to_scan.append(key)
+        if key == key.strip() and len(key) >= 8:
+            console.print("[dim yellow]⚠  Key passed as CLI arg — visible in process list (ps aux). Prefer interactive prompt.[/]")
+        _scan_single(key, output, no_github, no_gg)
+
     elif env_file:
         if not env_file.exists():
             console.print(f"[red]File not found:[/] {env_file}")
             raise typer.Exit(1)
         values = dotenv_values(env_file)
-        for k, v in values.items():
-            if v and len(v) >= 8:
-                keys_to_scan.append(v)
-                console.print(f"[dim]Found key in {k}[/]")
+        for var_name, raw_val in values.items():
+            if raw_val and len(raw_val) >= 8:
+                console.print(f"[dim]Scanning {var_name}...[/]")
+                _scan_single(raw_val, output, no_github, no_gg)
+                # Zero the value in the dict immediately after use
+                values[var_name] = "\x00" * len(raw_val)
+
     else:
         raw = typer.prompt("Enter API key", hide_input=True)
-        keys_to_scan.append(raw)
-
-    for raw_key in keys_to_scan:
-        _scan_single(raw_key, output, no_github, no_gg)
+        _scan_single(raw, output, no_github, no_gg)
+        raw = "\x00" * len(raw)
 
 
 def _scan_single(raw_key: str, output: Path | None, no_github: bool, no_gg: bool) -> None:
