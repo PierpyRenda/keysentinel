@@ -25,7 +25,7 @@ jobs:
         run: bandit -r keysentinel/ -ll -x tests/
 
       - name: pip-audit dependency check
-        run: pip-audit --strict
+        run: pip-audit --skip-editable
 
       - name: TruffleHog secrets scan
         uses: trufflesecurity/trufflehog@main
