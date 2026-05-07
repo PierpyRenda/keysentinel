@@ -3,14 +3,14 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "keycheck"
-version = "0.1.0"
-description = "CLI to detect compromised API keys, audit usage, and remediate leaks"
+name = "keysentinel"
+version = "0.2.0"
+description = "CLI sentinel that detects compromised API keys, audits provider usage, and automates remediation"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [{ name = "Pierpy", email = "pierpaolorenda@gmail.com" }]
-keywords = ["security", "api-keys", "secrets", "leak-detection"]
+keywords = ["security", "api-keys", "secrets", "leak-detection", "sentinel"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
@@ -40,11 +40,11 @@ dev = [
 ]
 
 [project.scripts]
-keycheck = "keycheck.cli:app"
+keysentinel = "keysentinel.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["keycheck*"]
+include = ["keysentinel*"]
 
 [tool.ruff]
 line-length = 100

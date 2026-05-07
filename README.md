@@ -1,10 +1,10 @@
-# keycheck
+# KeySentinel
 
-**CLI tool to detect compromised API keys, audit their usage, and automate remediation.**
+**A security sentinel that detects compromised API keys, audits provider usage, and automates remediation.**
 
-```
-pip install keycheck
-keycheck scan --key sk-...
+```bash
+pip install keysentinel
+keysentinel scan --env .env
 ```
 
 ---
@@ -13,36 +13,36 @@ keycheck scan --key sk-...
 
 | Feature | Detail |
 |---------|--------|
-| **Leak detection** | Scans GitHub public repos and GitGuardian database |
-| **Provider audit** | Queries OpenAI, Anthropic, Stripe, AWS logs for anomalous usage |
-| **Usage forensics** | Shows IPs, timestamps, and actions performed with the key |
-| **Auto-revocation** | Revokes Stripe keys automatically; guided steps for all others |
-| **Git history clean** | Instructions to remove keys from commit history |
-| **Secure memory** | Keys are stored as zeroed bytearrays, never written to disk or logs |
+| **Leak detection** | Scans GitHub public repos with smart rate-limit handling |
+| **Breach database** | Checks GitGuardian (sends SHA-256 only — key never exposed) |
+| **Provider audit** | Queries OpenAI, Anthropic, Stripe, AWS, GitHub for live usage |
+| **Usage forensics** | Shows IPs, timestamps, and actions performed with stolen keys |
+| **Auto-revocation** | Revokes Stripe keys instantly; guided steps for all others |
+| **Secure memory** | Keys stored as zeroed bytearrays — never written to disk or logs |
 
 ---
 
 ## Supported providers
 
-| Provider | Format detected | Audit logs | Auto-revoke |
-|----------|----------------|------------|-------------|
-| OpenAI | `sk-...` | ✓ (validity check) | Manual |
-| Anthropic | `sk-ant-...` | ✓ (validity check) | Manual |
-| AWS | `AKIA...` | ✓ CloudTrail | Manual |
-| Stripe Live | `rk_live_...` | ✓ Events + IPs | ✓ |
-| Stripe Test | `rk_test_...` | ✓ Events + IPs | ✓ |
-| GitHub | `ghp_...` | ✓ (validity check) | Manual |
+| Provider | Format | Audit logs | Auto-revoke |
+|----------|--------|------------|-------------|
+| OpenAI | `sk-...` | ✓ validity check | Manual |
+| Anthropic | `sk-ant-...` | ✓ validity check | Manual |
+| AWS | `AKIA...` | ✓ CloudTrail events + IPs | Manual |
+| Stripe Live | `rk_live_...` | ✓ Events + IPs | ✓ Auto |
+| Stripe Test | `rk_test_...` | ✓ Events + IPs | ✓ Auto |
+| GitHub | `ghp_...` | ✓ validity + scopes | Manual |
 
 ---
 
 ## Installation
 
 ```bash
-pip install keycheck
+pip install keysentinel
 
-# Optional: set tokens for higher rate limits
-export GITHUB_TOKEN=ghp_yourtoken
-export GITGUARDIAN_TOKEN=ggtoken
+# Recommended: set tokens for full scan coverage
+export GITHUB_TOKEN=ghp_yourtoken          # GitHub Code Search (30→5000 req/min)
+export GITGUARDIAN_TOKEN=gg_yourtoken      # GitGuardian breach database
 ```
 
 ---
@@ -50,67 +50,82 @@ export GITGUARDIAN_TOKEN=ggtoken
 ## Usage
 
 ```bash
-# Scan a single key (prompted securely)
-keycheck scan
+# Interactive prompt (most secure — key never in shell history)
+keysentinel scan
 
-# Scan with key as argument (use env var substitution in scripts)
-keycheck scan --key "$OPENAI_API_KEY"
+# Scan from .env file
+keysentinel scan --env .env.production
 
-# Scan all keys from a .env file
-keycheck scan --env .env.production
-
-# Force provider detection
-keycheck scan --key "rk_live_..." --provider stripe
+# Scan a single key via env var substitution
+keysentinel scan --key "$OPENAI_API_KEY"
 
 # Save JSON report
-keycheck scan --key "$MY_KEY" --output report.json
+keysentinel scan --env .env --output report.json
+
+# Skip specific scanners
+keysentinel scan --env .env --no-github --no-gitguardian
 
 # Revoke a compromised key
-keycheck revoke --key "$STRIPE_KEY"
+keysentinel revoke --key "$STRIPE_KEY"
+
+# Show version
+keysentinel version
 ```
 
 ---
 
 ## Security design
 
-- **Keys never touch disk** — handled as zeroed bytearrays (`SecureBytes`)
-- **No plaintext to third parties** — GitGuardian receives SHA-256 hash only
-- **TLS enforced** — all HTTP calls use `verify=True`, no override flag
-- **Crash-safe** — global exception hook redacts key patterns before printing
-- **Minimal dependencies** — `httpx`, `typer`, `rich`, `cryptography`, `pydantic`
-- **CI pipeline** — Bandit + pip-audit + TruffleHog on every PR
+| Control | Implementation |
+|---------|---------------|
+| Memory safety | `SecureBytes` — bytearray zeroed via `ctypes.from_buffer()` on exit |
+| No disk plaintext | Keys never written; reports use masked form only |
+| No log exposure | Global exception hook redacts key patterns before printing |
+| TLS enforced | `httpx` with `verify=True` — no user-configurable override |
+| Safe external calls | GitGuardian receives SHA-256 hash only, never the raw key |
+| Rate limiting | Smart GitHub quota check + exponential backoff on 429/403 |
+| Input validation | Regex + length + charset check before any operation |
+| Dependency audit | `bandit` + `pip-audit` + TruffleHog in GitHub Actions CI |
 
 ---
 
 ## Pros and cons
 
 **Pros**
-- Works entirely offline except for the scan calls
-- Open source and auditable — no black-box SaaS
-- Handles multiple providers in one command
-- Forensics: shows IPs and timestamps of unauthorized usage
-- Secure memory handling from day one
+- Entirely local except for the scan calls — no SaaS black box
+- Open source and fully auditable
+- Smart rate limiting: checks quota before each GitHub request
+- Forensics: IPs and timestamps of unauthorized key usage (Stripe, AWS)
+- `SecureBytes` wipes memory correctly via `ctypes.from_buffer()`
 
 **Cons**
 - OpenAI and Anthropic do not expose per-key usage logs via public API
-- AWS audit requires both Access Key ID and Secret Key
-- Auto-revocation only implemented for Stripe in v1
-- GitHub scan rate-limited without a token (30 req/min)
-- Does not scan private repos or dark web sources
+- AWS requires both Access Key ID and Secret Key for CloudTrail audit
+- Auto-revocation only for Stripe in v0.2
+- GitGuardian requires a free account registration
+
+---
+
+## Environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GITHUB_TOKEN` | Recommended | Raises GitHub search from 10 to 5000 req/min |
+| `GITGUARDIAN_TOKEN` | Optional | Enables breach database check |
 
 ---
 
 ## Roadmap
 
-- [ ] v0.2 — Auto-revocation for OpenAI and GitHub tokens
-- [ ] v0.2 — Pastebin and StackOverflow scan
-- [ ] v0.3 — AWS auto-revocation via IAM API
-- [ ] v0.3 — Slack/Telegram alert on detection
-- [ ] v1.0 — Daemon mode: continuous monitoring with cron
+- [ ] v0.3 — Auto-revocation for OpenAI and GitHub tokens
+- [ ] v0.3 — Pastebin and StackOverflow scan
+- [ ] v0.4 — AWS auto-revocation via IAM API
+- [ ] v0.4 — Slack/Telegram alert on detection
+- [ ] v1.0 — Daemon mode: continuous monitoring
 
 ---
 
 ## Responsible disclosure
 
-If you find a security issue in keycheck itself, open a private advisory on GitHub.
-Do not open public issues for security bugs.
+Found a security issue in KeySentinel itself? Open a **private security advisory** on GitHub.
+Do not create public issues for security vulnerabilities.

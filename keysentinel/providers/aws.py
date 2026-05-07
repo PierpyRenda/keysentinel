@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from keycheck.core.vault import SecureBytes
+from keysentinel.core.vault import SecureBytes
 
 
 def audit(access_key: SecureBytes, secret_key: SecureBytes, region: str = "us-east-1") -> dict[str, Any]:

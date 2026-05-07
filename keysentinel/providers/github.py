@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from keycheck.core.vault import SecureBytes
+from keysentinel.core.vault import SecureBytes
 
 
 def audit(key: SecureBytes) -> dict[str, Any]:

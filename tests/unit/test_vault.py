@@ -1,7 +1,7 @@
 """Tests for SecureBytes — the most security-critical component."""
 
 import pytest
-from keycheck.core.vault import SecureBytes, redact
+from keysentinel.core.vault import SecureBytes, redact
 
 
 class TestSecureBytes:

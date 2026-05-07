@@ -59,7 +59,7 @@ def print_report(results: dict[str, Any], output_path: Path | None = None) -> No
         console.print(Panel(
             "[bold red]ACTION REQUIRED[/]\n"
             "This key has been found in public sources.\n"
-            "Run [cyan]keycheck revoke[/] to invalidate it immediately.",
+            "Run [cyan]keysentinel revoke[/] to invalidate it immediately.",
             border_style="red",
         ))
 

@@ -22,7 +22,7 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Bandit static analysis
-        run: bandit -r keycheck/ -ll -x tests/
+        run: bandit -r keysentinel/ -ll -x tests/
 
       - name: pip-audit dependency check
         run: pip-audit --strict
@@ -35,7 +35,7 @@ jobs:
           head: HEAD
 
       - name: Ruff lint
-        run: ruff check keycheck/
+        run: ruff check keysentinel/
 
   tests:
     runs-on: ubuntu-latest
@@ -47,4 +47,4 @@ jobs:
       - name: Install
         run: pip install -e ".[dev]"
       - name: Run tests
-        run: pytest tests/ --cov=keycheck --cov-report=term-missing
+        run: pytest tests/ --cov=keysentinel --cov-report=term-missing

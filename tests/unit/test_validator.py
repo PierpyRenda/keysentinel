@@ -1,7 +1,7 @@
 """Tests for provider detection and input validation."""
 
 import pytest
-from keycheck.core.validator import validate, Provider
+from keysentinel.core.validator import validate, Provider
 
 
 class TestProviderDetection:

@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx
 
-from keycheck.core.vault import SecureBytes
+from keysentinel.core.vault import SecureBytes
 
 
 _BASE_URL = "https://api.gitguardian.com/v1"

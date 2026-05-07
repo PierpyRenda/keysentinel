@@ -6,8 +6,8 @@ from typing import Any
 
 import httpx
 
-from keycheck.core.validator import Provider
-from keycheck.core.vault import SecureBytes
+from keysentinel.core.validator import Provider
+from keysentinel.core.vault import SecureBytes
 
 
 def revoke(key: SecureBytes, provider: Provider) -> dict[str, Any]:

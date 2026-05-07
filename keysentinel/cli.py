@@ -10,14 +10,14 @@ import typer
 from dotenv import dotenv_values
 from rich.console import Console
 
-from keycheck.core import reporter, validator
-from keycheck.core.vault import SecureBytes, redact
-from keycheck.scanners import github, gitguardian
-from keycheck.providers import openai, anthropic, stripe
-from keycheck.remediator import revoker
+from keysentinel.core import reporter, validator
+from keysentinel.core.vault import SecureBytes, redact
+from keysentinel.scanners import github, gitguardian
+from keysentinel.providers import openai, anthropic, stripe
+from keysentinel.remediator import revoker
 
 app = typer.Typer(
-    name="keycheck",
+    name="keysentinel",
     help="Detect compromised API keys, audit usage, and remediate leaks.",
     add_completion=False,
 )
@@ -173,9 +173,9 @@ def revoke(
 
 @app.command()
 def version():
-    """Show keycheck version."""
-    from keycheck import __version__
-    console.print(f"keycheck {__version__}")
+    """Show keysentinel version."""
+    from keysentinel import __version__
+    console.print(f"keysentinel {__version__}")
 
 
 if __name__ == "__main__":

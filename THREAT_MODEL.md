@@ -29,7 +29,7 @@ and executes remediation (revoke + rotate). Runs locally on the user's machine.
 ## Threat Enumeration
 
 ### T1 — Key leaks via CLI history (HIGH)
-**Path:** user types `keycheck scan --key sk-abc123` → shell saves to `~/.zsh_history`
+**Path:** user types `keysentinel scan --key sk-abc123` → shell saves to `~/.zsh_history`
 **Mitigation:** prompt for key interactively via `typer.prompt(hide_input=True)` as default;
 document that `--key` flag should only be used in scripts with env var substitution.
 
