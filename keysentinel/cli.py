@@ -15,6 +15,7 @@ from keysentinel.core.vault import SecureBytes, redact
 from keysentinel.scanners import github, gitguardian
 from keysentinel.providers import openai, anthropic, stripe
 from keysentinel.providers import github as github_provider
+from keysentinel.providers import google, sendgrid, resend, groq, huggingface, slack, replicate, supabase
 from keysentinel.remediator import revoker
 
 app = typer.Typer(
@@ -116,6 +117,22 @@ def _scan_single(raw_key: str, output: Path | None, no_github: bool, no_gg: bool
             audit_result = stripe.audit(secure_key)
         elif prov == "github":
             audit_result = github_provider.audit(secure_key)
+        elif prov == "google":
+            audit_result = google.audit(secure_key)
+        elif prov == "sendgrid":
+            audit_result = sendgrid.audit(secure_key)
+        elif prov == "resend":
+            audit_result = resend.audit(secure_key)
+        elif prov == "groq":
+            audit_result = groq.audit(secure_key)
+        elif prov == "huggingface":
+            audit_result = huggingface.audit(secure_key)
+        elif prov == "slack":
+            audit_result = slack.audit(secure_key)
+        elif prov == "replicate":
+            audit_result = replicate.audit(secure_key)
+        elif prov == "supabase":
+            audit_result = supabase.audit(secure_key)
         elif prov == "aws":
             audit_result = {
                 "valid": None,

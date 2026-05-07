@@ -14,6 +14,14 @@ class Provider(str, Enum):
     STRIPE_LIVE = "stripe_live"
     STRIPE_TEST = "stripe_test"
     GITHUB = "github"
+    GOOGLE = "google"
+    SENDGRID = "sendgrid"
+    RESEND = "resend"
+    GROQ = "groq"
+    HUGGINGFACE = "huggingface"
+    SLACK = "slack"
+    REPLICATE = "replicate"
+    SUPABASE = "supabase"
     UNKNOWN = "unknown"
 
 
@@ -27,13 +35,23 @@ class KeyInfo:
 
 
 _PATTERNS: list[tuple[Provider, re.Pattern, str]] = [
-    (Provider.ANTHROPIC,   re.compile(r"^sk-ant-[A-Za-z0-9\-_]{20,}$"),     "Anthropic API key"),
-    (Provider.OPENAI,      re.compile(r"^sk-[A-Za-z0-9\-_]{20,}$"),         "OpenAI API key"),
-    (Provider.AWS,         re.compile(r"^AKIA[A-Z0-9]{16}$"),                "AWS Access Key ID"),
-    (Provider.STRIPE_LIVE, re.compile(r"^rk_live_[A-Za-z0-9]{20,}$"),       "Stripe Live Secret"),
-    (Provider.STRIPE_TEST, re.compile(r"^rk_test_[A-Za-z0-9]{20,}$"),       "Stripe Test Secret"),
-    (Provider.GITHUB,      re.compile(r"^ghp_[A-Za-z0-9]{36}$"),            "GitHub Personal Token"),
-    (Provider.GITHUB,      re.compile(r"^github_pat_[A-Za-z0-9_]{82}$"),    "GitHub Fine-grained Token"),
+    # More-specific patterns first to avoid prefix collisions
+    (Provider.ANTHROPIC,   re.compile(r"^sk-ant-[A-Za-z0-9\-_]{20,}$"),                        "Anthropic API key"),
+    (Provider.OPENAI,      re.compile(r"^sk-[A-Za-z0-9\-_]{20,}$"),                            "OpenAI API key"),
+    (Provider.AWS,         re.compile(r"^AKIA[A-Z0-9]{16}$"),                                   "AWS Access Key ID"),
+    (Provider.STRIPE_LIVE, re.compile(r"^rk_live_[A-Za-z0-9]{20,}$"),                          "Stripe Live Secret"),
+    (Provider.STRIPE_TEST, re.compile(r"^rk_test_[A-Za-z0-9]{20,}$"),                          "Stripe Test Secret"),
+    (Provider.GITHUB,      re.compile(r"^ghp_[A-Za-z0-9]{36,}$"),                              "GitHub Personal Token"),
+    (Provider.GITHUB,      re.compile(r"^github_pat_[A-Za-z0-9_]{82,}$"),                      "GitHub Fine-grained Token"),
+    (Provider.GOOGLE,      re.compile(r"^AIza[A-Za-z0-9\-_]{35}$"),                            "Google API Key (Cloud/Gemini)"),
+    (Provider.SENDGRID,    re.compile(r"^SG\.[A-Za-z0-9\-_]{22}\.[A-Za-z0-9\-_]{43}$"),       "SendGrid API Key"),
+    (Provider.RESEND,      re.compile(r"^re_[A-Za-z0-9_]{24,}$"),                              "Resend API Key"),
+    (Provider.GROQ,        re.compile(r"^gsk_[A-Za-z0-9]{50,}$"),                              "Groq API Key"),
+    (Provider.HUGGINGFACE, re.compile(r"^hf_[A-Za-z0-9]{10,}$"),                              "HuggingFace API Token"),
+    (Provider.SLACK,       re.compile(r"^xoxb-[0-9]+-[0-9]+-[A-Za-z0-9]+$"),                  "Slack Bot Token"),
+    (Provider.SLACK,       re.compile(r"^xoxp-[0-9]+-[0-9]+-[0-9]+-[A-Za-z0-9a-f]+$"),       "Slack User Token"),
+    (Provider.REPLICATE,   re.compile(r"^r8_[A-Za-z0-9]{30,}$"),                              "Replicate API Token"),
+    (Provider.SUPABASE,    re.compile(r"^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$"), "Supabase JWT (anon/service_role)"),
 ]
 
 _MAX_KEY_LENGTH = 512

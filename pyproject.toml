@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "keysentinel"
-version = "0.2.0"
+version = "0.3.0"
 description = "CLI sentinel that detects compromised API keys, audits provider usage, and automates remediation"
 readme = "README.md"
 license = { text = "MIT" }
