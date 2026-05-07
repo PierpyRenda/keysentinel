@@ -1,4 +1,4 @@
-"""Keycheck CLI — entry point."""
+"""KeySentinel CLI — entry point."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from keysentinel.core import reporter, validator
 from keysentinel.core.vault import SecureBytes, redact
 from keysentinel.scanners import github, gitguardian
 from keysentinel.providers import openai, anthropic, stripe
+from keysentinel.providers import github as github_provider
 from keysentinel.remediator import revoker
 
 app = typer.Typer(
@@ -113,14 +114,27 @@ def _scan_single(raw_key: str, output: Path | None, no_github: bool, no_gg: bool
             audit_result = anthropic.audit(secure_key)
         elif prov in ("stripe_live", "stripe_test"):
             audit_result = stripe.audit(secure_key)
+        elif prov == "github":
+            audit_result = github_provider.audit(secure_key)
+        elif prov == "aws":
+            audit_result = {
+                "valid": None,
+                "found": False,
+                "summary": "Requires both Access Key ID and Secret Key — use --env to provide both.",
+            }
 
         if audit_result:
+            audit_result.setdefault("found", False)
             results["scans"]["provider_audit"] = audit_result
-            reporter.print_scan_result(
-                f"{prov} audit",
-                not audit_result.get("valid", True),
-                {"detail": audit_result.get("summary", "")},
-            )
+            is_valid = audit_result.get("valid")
+            if is_valid is None:
+                icon = "[dim]─ Skipped[/]"
+            elif is_valid:
+                icon = "[green]✓ Active[/]"
+            else:
+                icon = "[yellow]⚠ Invalid/Revoked[/]"
+            console.print(f"  {icon}  [bold]{prov} audit[/]")
+            console.print(f"       [dim]detail:[/] {audit_result.get('summary', '')}")
 
         compromised = any(s.get("found") for s in results["scans"].values())
         results["compromised"] = compromised

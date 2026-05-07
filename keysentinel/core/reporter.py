@@ -21,7 +21,7 @@ def _now_iso() -> str:
 
 def print_banner() -> None:
     console.print(Panel.fit(
-        "[bold yellow]KEYCHECK[/] — API Key Compromise Scanner\n"
+        "[bold yellow]KEYSENTINEL[/] — API Key Compromise Scanner\n"
         "[dim]All keys are handled in-memory. Nothing is stored in plaintext.[/]",
         border_style="yellow",
     ))
@@ -49,11 +49,23 @@ def print_report(results: dict[str, Any], output_path: Path | None = None) -> No
 
     for source, data in results.get("scans", {}).items():
         found = data.get("found", False)
-        status = "[red]LEAKED[/]" if found else "[green]CLEAN[/]"
+        if source == "provider_audit":
+            is_valid = data.get("valid")
+            if is_valid is None:
+                status = "[dim]SKIPPED[/]"
+            elif is_valid:
+                status = "[green]ACTIVE[/]"
+            else:
+                status = "[yellow]INACTIVE[/]"
+        else:
+            status = "[red]LEAKED[/]" if found else "[green]CLEAN[/]"
         detail = data.get("summary", "—")
         table.add_row(source, status, detail)
 
-    console.print(table)
+    if not results.get("scans"):
+        console.print("[dim]No scanners ran. Use --help to see options.[/]")
+    else:
+        console.print(table)
 
     if results.get("compromised"):
         console.print(Panel(
