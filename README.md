@@ -1,5 +1,10 @@
 # KeySentinel
 
+![Security Scan](https://github.com/PierpyRenda/keysentinel/actions/workflows/security.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-0.3.0-yellow)
+
 **Detect compromised API keys before attackers exploit them.**
 
 KeySentinel is an open-source CLI that runs entirely on your machine. You give it your API keys, it tells you if they have been leaked, whether they are still active, and what to do next. Nothing is sent to any server controlled by us — only to the official APIs of the providers you use.
