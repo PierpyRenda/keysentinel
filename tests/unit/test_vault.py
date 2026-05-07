@@ -1,6 +1,5 @@
 """Tests for SecureBytes — the most security-critical component."""
 
-import pytest
 from keysentinel.core.vault import SecureBytes, redact
 
 
