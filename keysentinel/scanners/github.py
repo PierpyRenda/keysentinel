@@ -114,7 +114,7 @@ def _smart_sleep(client: httpx.Client, headers: dict, attempt: int) -> None:
                 wait = max(0, reset_at - time.time()) + 2
                 time.sleep(min(wait, 65))
                 return
-    except Exception:
+    except Exception:  # nosec B110 — rate-limit prefetch is best-effort; failure is non-fatal
         pass
     # Standard inter-request delay + exponential back-off on retries
     time.sleep(_MIN_DELAY + (_BACKOFF_BASE * (2 ** attempt) if attempt > 0 else 0))
