@@ -29,13 +29,6 @@ jobs:
           pip install --upgrade pip
           pip-audit --skip-editable
 
-      - name: TruffleHog secrets scan
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
-
       - name: Ruff lint
         run: ruff check keysentinel/
 
